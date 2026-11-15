@@ -1,0 +1,102 @@
+import { ScrollView } from "std-widgets.slint";
+
+export struct AppTile { name: string, category: string, description: string, icon: image, has-icon: bool }
+
+export component HomeView inherits Rectangle {
+    // This viewport fills the window, without inheriting content-driven size hints.
+    min-width: 0px; min-height: 0px;
+    preferred-width: 0px; preferred-height: 0px;
+    max-width: 65535px; max-height: 65535px;
+    horizontal-stretch: 1; vertical-stretch: 1;
+    background: #101713;
+    in property <[AppTile]> apps;
+    in property <int> selected;
+    in property <string> status;
+    in property <bool> busy;
+    callback select(int);
+    callback open(int);
+    property <length> tile-size: min(250px, root.height * 0.28, max(140px, (root.width - 120px) / 3 - 40px));
+    property <length> slot-width: root.tile-size + 40px;
+    // One continuous position drives both the sliding frame and the card enlargement.
+    property <float> focus-position: root.selected;
+    animate focus-position { duration: 260ms; easing: ease-in-out; }
+
+    VerticalLayout {
+        padding: min(36px, root.height * 0.04);
+        spacing: min(20px, root.height * 0.02);
+        HorizontalLayout {
+            Text { text: "soffa / shell"; color: #e5eddf; font-size: 24px; font-weight: 700; }
+            Text { text: "YOUR LIVING ROOM, YOUR WAY"; color: #91a38f; font-size: 14px; horizontal-alignment: right; }
+        }
+        Rectangle { vertical-stretch: 1; background: transparent; }
+        Text { text: "MAKE YOURSELF AT HOME"; color: #c4e7a0; font-size: 14px; letter-spacing: 2px; horizontal-alignment: center; }
+        Text { text: "What's the plan tonight?"; color: #f0f5e9; font-size: 38px; font-weight: 800; horizontal-alignment: center; }
+        tiles := ScrollView {
+            height: root.tile-size * 1.2 + 24px;
+            horizontal-scrollbar-policy: always-off;
+            vertical-scrollbar-policy: always-off;
+            content-width: max(self.visible-width, root.apps.length * root.slot-width);
+            content-height: self.visible-height;
+            content-x: -max(0px, min(root.selected * root.slot-width - (self.visible-width - root.slot-width) / 2, self.content-width - self.visible-width));
+            animate content-x { duration: 260ms; easing: ease-in-out; }
+            row := Rectangle {
+                width: tiles.content-width;
+                height: tiles.content-height;
+                background: transparent;
+                for app[index] in root.apps: Rectangle {
+                    x: max(0px, (row.width - root.apps.length * root.slot-width) / 2) + index * root.slot-width;
+                    y: 0px;
+                    width: root.slot-width;
+                    height: row.height;
+                    background: transparent;
+                    accessible-role: button;
+                    accessible-label: app.name;
+                    property <float> emphasis: max(0, 1 - max(root.focus-position - index, index - root.focus-position));
+                    card := Rectangle {
+                        width: root.tile-size * (0.92 + parent.emphasis * 0.14);
+                        height: self.width;
+                        x: (parent.width - self.width) / 2;
+                        y: (parent.height - self.height) / 2 - parent.emphasis * 5px;
+                        border-radius: 24px;
+                        border-width: 1px;
+                        border-color: #314332;
+                        background: #1b2820;
+                        if app.has-icon: Image {
+                            // Keep SVG rasterization size stable during focus animations.
+                            // The surrounding card grows; the cached logo only moves.
+                            width: root.tile-size * 0.64;
+                            height: self.width;
+                            x: (parent.width - self.width) / 2;
+                            y: (parent.height - self.height) / 2;
+                            source: app.icon;
+                            image-fit: contain;
+                        }
+
+                    }
+                    TouchArea {
+                        mouse-cursor: pointer;
+                        // Keep the hit area fixed while the visible card grows, preventing jitter.
+                        changed has-hover => {if (self.has-hover) {root.select(index);}}
+                        clicked => {root.open(index);}
+                    }
+                }
+                Rectangle {
+                    visible: root.apps.length > 0;
+                    x: max(0px, (row.width - root.apps.length * root.slot-width) / 2)
+                        + root.focus-position * root.slot-width + (root.slot-width - self.width) / 2;
+                    y: (row.height - self.height) / 2 - 5px;
+                    width: root.tile-size * 1.06;
+                    height: self.width;
+                    background: transparent;
+                    border-radius: 24px;
+                    border-width: 3px;
+                    border-color: #c4e7a0;
+                }
+            }
+        }
+        Rectangle { vertical-stretch: 1; background: transparent; }
+        Text { text: root.status; color: root.busy ? #c4e7a0 : #a7b6a3; font-size: 15px; wrap: word-wrap; horizontal-alignment: center; }
+        Rectangle { height: 1px; background: #314332; }
+        Text { text: "LEFT / RIGHT  Select     ENTER  Open     F11  Fullscreen     ESC  Leave fullscreen / Quit"; color: #91a38f; font-size: 13px; horizontal-alignment: center; wrap: word-wrap; }
+    }
+}

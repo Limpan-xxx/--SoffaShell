@@ -1,12 +1,6 @@
-import { ScrollView } from "std-widgets.slint";
+import { HomeView, AppTile } from "home.slint";
 import { MusicView, MusicRow } from "music.slint";
-export { MusicRow }
-
-export struct AppTile {
-    name: string,
-    category: string,
-    description: string,
-}
+export { MusicRow, AppTile }
 
 export component Shell inherits Window {
     title: "SoffaShell";
@@ -102,64 +96,21 @@ export component Shell inherits Window {
             return reject;
         }
 
-        VerticalLayout {
+        HomeView {
             visible: !root.music-visible;
-            padding: 44px;
-            spacing: 24px;
-            HorizontalLayout {
-                Text { text: "soffa / shell"; color: #e5eddf; font-size: 24px; font-weight: 700; }
-                Text { text: "YOUR LIVING ROOM, YOUR WAY"; color: #91a38f; font-size: 14px; horizontal-alignment: right; }
+            apps: root.apps;
+            selected: root.selected;
+            status: root.status;
+            busy: root.launching;
+            select(index) => {
+                root.selected = index;
+                root.status = "Ready when you are.";
+                keyboard.focus();
             }
-            HorizontalLayout {
-                spacing: 48px;
-                VerticalLayout {
-                    horizontal-stretch: 1;
-                    spacing: 20px;
-                    Rectangle { vertical-stretch: 1; background: transparent; }
-                    Text { text: "MAKE YOURSELF AT HOME"; color: #c4e7a0; font-size: 15px; letter-spacing: 2px; }
-                    Text { text: root.apps[root.selected].name; color: #f0f5e9; font-size: 64px; font-weight: 800; }
-                    Text { text: root.apps[root.selected].description; color: #a7b6a3; font-size: 24px; wrap: word-wrap; }
-                    Rectangle { height: 3px; width: 64px; background: #c4e7a0; }
-                    Text { text: "Choose an app. Settle in."; color: #849480; font-size: 18px; }
-                    Rectangle { vertical-stretch: 1; background: transparent; }
-                }
-                ScrollView {
-                    width: 390px;
-                    content-y: -max(0px, min(root.selected * 154px, self.content-height - self.visible-height));
-                    VerticalLayout {
-                        spacing: 14px;
-                        padding: 4px;
-                        for app[index] in root.apps: Rectangle {
-                            height: 140px;
-                            border-radius: 18px;
-                            background: root.selected == index ? #c4e7a0 : #1d2a21;
-                            border-width: 2px;
-                            border-color: root.selected == index ? #e5ffca : #314332;
-                            animate background { duration: 140ms; }
-                            VerticalLayout {
-                                padding: 24px;
-                                spacing: 8px;
-                                Text { text: app.category; color: root.selected == index ? #405638 : #91a38f; font-size: 14px; }
-                                Text { text: app.name; color: root.selected == index ? #172311 : #e5eddf; font-size: 30px; font-weight: 700; }
-                            }
-                            TouchArea {
-                                clicked => {
-                                    root.selected = index;
-                                    keyboard.focus();
-                                    root.launch();
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            Text { text: root.status; color: root.launching ? #c4e7a0 : #a7b6a3; font-size: 16px; wrap: word-wrap; }
-            Rectangle { height: 1px; background: #314332; }
-            Text {
-                text: "ARROWS  Select     ENTER  Open     F11  Fullscreen     ESC  Leave fullscreen / Quit";
-                color: #91a38f;
-                font-size: 14px;
-                wrap: word-wrap;
+            open(index) => {
+                root.selected = index;
+                keyboard.focus();
+                root.launch();
             }
         }
         music := MusicView {

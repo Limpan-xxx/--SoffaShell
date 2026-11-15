@@ -1,4 +1,5 @@
 mod config;
+mod icons;
 mod music;
 mod navigation;
 mod processes;
@@ -34,15 +35,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let config = Rc::new(config::Config::load(config_path.as_deref())?);
     let ui = Shell::new()?;
-    let tiles = config
-        .apps
-        .iter()
-        .map(|app| AppTile {
-            name: app.name.as_str().into(),
-            category: app.category.as_str().into(),
-            description: app.description.as_str().into(),
-        })
-        .collect::<Vec<_>>();
+    let tiles = config.apps.iter().map(icons::tile).collect::<Vec<_>>();
     ui.set_apps(Rc::new(slint::VecModel::from(tiles)).into());
     ui.window().set_fullscreen(fullscreen);
 

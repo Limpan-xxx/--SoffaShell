@@ -979,12 +979,15 @@ mod tests {
         software_renderer::{MinimalSoftwareWindow, RepaintBufferType},
     };
 
-    struct TestPlatform(Rc<MinimalSoftwareWindow>);
+    struct TestPlatform(Rc<MinimalSoftwareWindow>, Rc<std::cell::Cell<Duration>>);
     impl Platform for TestPlatform {
         fn create_window_adapter(
             &self,
         ) -> std::result::Result<Rc<dyn WindowAdapter>, slint::PlatformError> {
             Ok(self.0.clone())
+        }
+        fn duration_since_start(&self) -> Duration {
+            self.1.get()
         }
     }
 
@@ -1025,14 +1028,23 @@ mod tests {
     #[test]
     fn keyboard_navigation_and_music_pages_render_without_a_desktop() {
         let window = MinimalSoftwareWindow::new(RepaintBufferType::NewBuffer);
-        slint::platform::set_platform(Box::new(TestPlatform(window.clone()))).unwrap();
+        let clock = Rc::new(std::cell::Cell::new(Duration::ZERO));
+        slint::platform::set_platform(Box::new(TestPlatform(window.clone(), clock.clone())))
+            .unwrap();
+        let advance = |milliseconds| {
+            clock.set(clock.get() + Duration::from_millis(milliseconds));
+            slint::platform::update_timers_and_animations();
+        };
         let ui = Shell::new().unwrap();
+        let config = crate::config::Config::load(None).unwrap();
         ui.set_apps(
-            Rc::new(VecModel::from(vec![crate::AppTile {
-                name: "Spotify".into(),
-                category: "LISTEN".into(),
-                description: "Music".into(),
-            }]))
+            Rc::new(VecModel::from(
+                config
+                    .apps
+                    .iter()
+                    .map(crate::icons::tile)
+                    .collect::<Vec<_>>(),
+            ))
             .into(),
         );
         let music = Music::new(&ui, true, Rc::new(|| {}));
@@ -1044,6 +1056,98 @@ mod tests {
         });
         ui.show().unwrap();
         window.set_size(slint::PhysicalSize::new(1280, 800));
+        let weak = ui.as_weak();
+        ui.on_navigate(move |direction| {
+            if let Some(ui) = weak.upgrade() {
+                ui.set_selected(crate::navigation::next_selection(
+                    ui.get_selected() as usize,
+                    direction,
+                    3,
+                ) as i32);
+            }
+        });
+        let launched = Rc::new(std::cell::Cell::new(-1));
+        let launch_index = launched.clone();
+        let weak = ui.as_weak();
+        ui.on_launch(move || {
+            launch_index.set(weak.upgrade().unwrap().get_selected());
+        });
+        for (width, height) in [(800, 600), (1280, 800), (1920, 1080)] {
+            window.set_size(slint::PhysicalSize::new(width, height));
+            render(&window, &format!("home-{width}"));
+        }
+        window.set_size(slint::PhysicalSize::new(1280, 800));
+        ui.invoke_focus_navigation();
+        advance(300);
+        let before = render(&window, "home-before-input");
+        press(&ui, Key::RightArrow);
+        assert_eq!(ui.get_selected(), 1);
+        let beginning = render(&window, "home-animation-000ms");
+        advance(90);
+        let middle = render(&window, "home-animation-090ms");
+        advance(210);
+        let end = render(&window, "home-animation-300ms");
+        let frame_x = |pixels: &[slint::Rgb8Pixel]| {
+            let points = pixels
+                .iter()
+                .enumerate()
+                .filter(|(index, pixel)| {
+                    let y = *index / 1280;
+                    (280..600).contains(&y)
+                        && pixel.r > 170
+                        && pixel.g > 210
+                        && pixel.b > 120
+                        && pixel.b < 200
+                })
+                .map(|(index, _)| (index % 1280) as f64)
+                .collect::<Vec<_>>();
+            assert!(!points.is_empty(), "Focus frame was not rendered");
+            points.iter().sum::<f64>() / points.len() as f64
+        };
+        let (a, b, c, d) = (
+            frame_x(&before),
+            frame_x(&beginning),
+            frame_x(&middle),
+            frame_x(&end),
+        );
+        assert!((a - b).abs() < 2.0, "Focus jumped immediately on selection");
+        assert!(
+            c > b + 10.0 && c < d - 10.0,
+            "No visible intermediate animation frame: {b}, {c}, {d}"
+        );
+        assert!(d > b + 200.0, "Focus frame did not reach the next tile");
+        press(&ui, Key::LeftArrow);
+        assert_eq!(ui.get_selected(), 0);
+        press(&ui, Key::LeftArrow);
+        assert_eq!(ui.get_selected(), 2);
+        ui.window().dispatch_event(WindowEvent::PointerMoved {
+            position: slint::LogicalPosition::new(376.0, 430.0),
+        });
+        assert_eq!(
+            ui.get_selected(),
+            0,
+            "Hovering the first tile must select it"
+        );
+        press(&ui, Key::RightArrow);
+        assert_eq!(ui.get_selected(), 1);
+        render(&window, "home-keyboard-focus");
+        assert_eq!(
+            ui.get_selected(),
+            1,
+            "An unmoved pointer must not steal keyboard selection"
+        );
+        ui.window().dispatch_event(WindowEvent::PointerMoved {
+            position: slint::LogicalPosition::new(904.0, 430.0),
+        });
+        assert_eq!(
+            ui.get_selected(),
+            2,
+            "Hovering the third tile must select it"
+        );
+        press(&ui, Key::Return);
+        assert_eq!(launched.get(), 2);
+        advance(300);
+        render(&window, "home-hover-focus");
         music.open();
         ui.invoke_focus_navigation();
         assert_eq!(ui.get_music_page(), "library");

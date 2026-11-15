@@ -15,8 +15,8 @@ cargo run -- --windowed
 
 | Key | Action |
 | --- | --- |
-| Up / Left | Previous app (wraps around) |
-| Down / Right | Next app (wraps around) |
+| Left (or Up) | Previous app (wraps around) |
+| Right (or Down) | Next app (wraps around) |
 | Enter | Launch selected app |
 | F11 | Toggle fullscreen |
 | Escape | Leave fullscreen; quit if already windowed |
@@ -24,6 +24,16 @@ cargo run -- --windowed
 
 Clicking a tile also launches it. Starts fullscreen by default; use `--windowed`
 for development. F11 toggles fullscreen while running.
+
+The home screen displays a horizontal row of app logos. Hovering selects a tile;
+the selected tile grows while one focus outline slides between cards over 260 ms.
+Arrow keys use the same selection,
+and longer app lists scroll horizontally to keep the selected tile visible.
+Logos are loaded from installed desktop entries and host icon themes / pixmaps,
+preferring scalable SVGs and then large PNGs (including 512×512) for TV displays;
+SoffaShell does not download or bundle copies of the launcher icons. If an icon
+is missing, the app name is shown. An app entry can optionally set `icon` to an
+installed icon name or an absolute path to an existing icon file.
 
 ## Spotify TV interface
 
