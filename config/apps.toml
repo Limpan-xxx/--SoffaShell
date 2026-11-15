@@ -1,0 +1,22 @@
+# Linux defaults. Use executable paths / arguments for your installation.
+# No shell expansion (~, $HOME) is applied.
+[[apps]]
+name = "Steam"
+category = "PLAY"
+description = "Your games. Your sofa."
+command = "steam"
+args = ["-bigpicture"]
+
+[[apps]]
+name = "Stremio"
+category = "WATCH"
+description = "Settle in for something good."
+command = "stremio"
+args = []
+
+[[apps]]
+name = "Spotify"
+category = "LISTEN"
+description = "Give the room a soundtrack."
+command = "spotify-launcher"
+args = []

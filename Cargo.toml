@@ -1,0 +1,24 @@
+[package]
+name = "soffashell"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.92"
+description = "A keyboard-first living room app launcher"
+license = "MIT"
+build = "build.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+toml = "0.9"
+slint = { version = "~1.18.1", default-features = false, features = ["std", "backend-winit", "renderer-software", "compat-1-18"] }
+
+[build-dependencies]
+slint-build = "~1.18.1"
+
+# Keep local GUI builds from accumulating gigabytes of debug data and caches.
+[profile.dev]
+debug = 0
+incremental = false
+
+[profile.release]
+strip = "symbols"
