@@ -3729,10 +3729,16 @@ dependencies = [
 name = "soffashell"
 version = "0.1.0"
 dependencies = [
+ "base64",
+ "image",
  "serde",
+ "serde_json",
  "slint",
  "slint-build",
  "toml 0.9.12+spec-1.1.0",
+ "url",
+ "webbrowser",
+ "zbus",
 ]
 
 [[package]]

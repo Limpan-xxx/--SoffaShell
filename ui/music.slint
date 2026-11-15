@@ -1,0 +1,168 @@
+import { ScrollView, LineEdit, Button } from "std-widgets.slint";
+
+export struct MusicRow { title: string, subtitle: string, enabled: bool }
+
+export component MusicView inherits Rectangle {
+    // The window owns the viewport size; content must not size the window in return.
+    min-width: 0px;
+    min-height: 0px;
+    preferred-width: 0px;
+    preferred-height: 0px;
+    max-width: 65535px;
+    max-height: 65535px;
+    horizontal-stretch: 1;
+    vertical-stretch: 1;
+    background: #101713;
+    in property <string> page;
+    in property <[MusicRow]> rows;
+    in property <int> selected;
+    in property <int> menu;
+    in property <int> focus-pane;
+    in property <bool> connected;
+    in property <bool> demo;
+    in property <bool> busy;
+    in property <bool> signing-in;
+    in-out property <string> client-id;
+    in property <string> title;
+    in property <string> detail;
+    in property <image> artwork;
+    in property <bool> has-art;
+    in property <string> track;
+    in property <string> artist;
+    in property <bool> playing;
+    in property <float> progress;
+    in property <string> time;
+    in property <string> device;
+    in property <string> status;
+    callback action(string);
+    callback choose(int);
+    callback focus-client-id();
+    focus-client-id => { client-input.focus(); }
+
+    VerticalLayout {
+        padding: 24px;
+        spacing: 16px;
+        HorizontalLayout {
+            spacing: 12px;
+            Image { source: @image-url("../assets/spotify.svg"); width: 32px; height: 32px; image-fit: contain; }
+            Text { text: "Spotify"; color: #f0f5e9; font-size: 26px; font-weight: 700; }
+            Text { text: "YOUR MUSIC"; color: #91a38f; font-size: 14px; horizontal-alignment: center; }
+            Text {
+                text: root.demo ? "DEMO · SAMPLE CONTENT" : root.connected ? "CONNECTED" : "CONNECT YOUR ACCOUNT";
+                color: #bfe6a1; font-size: 13px; horizontal-alignment: right;
+            }
+        }
+        HorizontalLayout {
+            spacing: 24px;
+            VerticalLayout {
+                width: 182px;
+                spacing: 8px;
+                for label[index] in ["Playlists", "Now playing", "Devices", root.connected ? "Sign out" : "Connect", "Desktop app", "Back home"]: Rectangle {
+                    height: 48px;
+                    border-radius: 10px;
+                    background: root.focus-pane == 0 && root.menu == index ? #c4e7a0 : root.menu == index ? #263b2a : transparent;
+                    Text { x: 14px; width: parent.width - 28px; height: parent.height; text: label;
+                        color: root.focus-pane == 0 && root.menu == index ? #172311 : #d5e1cf; font-size: 19px; vertical-alignment: center; }
+                    TouchArea { clicked => { root.action(["library", "now-playing", "devices", "account", "desktop", "home"][index]); } }
+                }
+                Rectangle { background: transparent; vertical-stretch: 1; }
+                Text { text: "R  Refresh\nSPACE  Play / pause\nN / P  Next / previous"; color: #91a38f; font-size: 13px; }
+            }
+            VerticalLayout {
+                width: min(root.width * 0.23, root.height * 0.38, root.page == "setup" ? 280px : 340px);
+                spacing: 16px;
+                Rectangle {
+                    height: self.width;
+                    clip: true;
+                    border-radius: 14px;
+                    background: #1d2a21;
+                    if root.has-art: Image {
+                        width: parent.width;
+                        height: parent.height;
+                        source: root.artwork;
+                        image-fit: contain;
+                    }
+                    if !root.has-art: Text { text: root.demo ? "♪" : "♫"; color: #c4e7a0; font-size: 100px; horizontal-alignment: center; vertical-alignment: center; }
+                }
+                Text { text: root.title; color: #f0f5e9; font-size: 27px; font-weight: 700; wrap: word-wrap; }
+                Text { text: root.detail; color: #a7b6a3; font-size: 16px; wrap: word-wrap; }
+                Rectangle { vertical-stretch: 1; background: transparent; }
+            }
+            Rectangle {
+                horizontal-stretch: 1;
+                background: transparent;
+                VerticalLayout {
+                    visible: root.page == "setup";
+                    spacing: 16px;
+                    Text { text: "Your music, from the sofa."; color: #f0f5e9; font-size: 28px; font-weight: 700; wrap: word-wrap; }
+                    Text { text: "1. Create an app in the Spotify Developer dashboard.\n2. Add this Redirect URI:\nhttp://127.0.0.1:8888/callback\n3. Paste the Client ID below."; color: #a7b6a3; font-size: 17px; wrap: word-wrap; }
+                    Button { text: "Open Developer dashboard"; clicked => {root.action("developer");} }
+                    Text { text: "CLIENT ID"; color: #bfe6a1; font-size: 13px; }
+                    client-input := LineEdit {
+                        text <=> root.client-id;
+                        placeholder-text: "Paste your Spotify Client ID";
+                        enabled: !root.signing-in;
+                        accepted => { root.action("connect"); }
+                    }
+                    Button { text: root.signing-in ? "Cancel sign-in" : "Connect Spotify"; clicked => {root.action("connect");} }
+                    Text { text: "Your browser handles sign-in. No client secret is needed."; color: #91a38f; font-size: 14px; wrap: word-wrap; }
+                    Rectangle { background: transparent; vertical-stretch: 1; }
+                }
+                ScrollView {
+                    visible: root.page != "setup";
+                    content-y: -max(0px, min(root.selected * 94px, self.content-height - self.visible-height));
+                    VerticalLayout {
+                        padding: 3px;
+                        spacing: 10px;
+                        for row[index] in root.rows: Rectangle {
+                            height: 84px;
+                            border-radius: 12px;
+                            background: root.focus-pane == 1 && root.selected == index ? #c4e7a0 : #1d2a21;
+                            border-width: 1px;
+                            border-color: root.selected == index ? #c4e7a0 : #314332;
+                            opacity: row.enabled ? 1 : 0.55;
+                            VerticalLayout {
+                                padding: 14px;
+                                spacing: 6px;
+                                Text { text: row.title; color: root.focus-pane == 1 && root.selected == index ? #172311 : #edf4e7; font-size: 21px; font-weight: 600; overflow: elide; }
+                                Text { text: row.subtitle; color: root.focus-pane == 1 && root.selected == index ? #405638 : #91a38f; font-size: 14px; overflow: elide; }
+                            }
+                            TouchArea { clicked => {root.choose(index);} }
+                        }
+                    }
+                }
+            }
+        }
+        Text { text: root.status; color: #bfe6a1; font-size: 15px; wrap: word-wrap; min-height: 22px; }
+        Rectangle {
+            height: 102px;
+            border-radius: 12px;
+            background: #1d2a21;
+            VerticalLayout {
+                padding: 14px;
+                spacing: 10px;
+                HorizontalLayout {
+                    spacing: 16px;
+                    VerticalLayout {
+                        horizontal-stretch: 1;
+                        Text { text: root.track; color: #f0f5e9; font-size: 18px; font-weight: 600; overflow: elide; }
+                        Text { text: root.artist; color: #91a38f; font-size: 13px; overflow: elide; }
+                    }
+                    Text { text: root.device; color: #91a38f; font-size: 13px; vertical-alignment: center; overflow: elide; }
+                    Button { text: "Previous"; clicked => {root.action("previous");} }
+                    Button { text: root.playing ? "Pause" : "Play"; clicked => {root.action("toggle");} }
+                    Button { text: "Next"; clicked => {root.action("next");} }
+                }
+                HorizontalLayout {
+                    spacing: 16px;
+                    Rectangle {
+                        height: 4px; background: #405638; vertical-stretch: 0;
+                        Rectangle { width: parent.width * root.progress; background: #c4e7a0; }
+                    }
+                    Text { text: root.time; color: #91a38f; font-size: 12px; }
+                }
+            }
+        }
+        Text { text: "ARROWS  Navigate    ENTER  Select / play    ESC  Back    CTRL+SUPER+X  Quit Spotify    F11  Fullscreen"; color: #91a38f; font-size: 13px; wrap: word-wrap; }
+    }
+}

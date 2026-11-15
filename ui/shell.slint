@@ -1,4 +1,6 @@
 import { ScrollView } from "std-widgets.slint";
+import { MusicView, MusicRow } from "music.slint";
+export { MusicRow }
 
 export struct AppTile {
     name: string,
@@ -10,8 +12,8 @@ export component Shell inherits Window {
     title: "SoffaShell";
     preferred-width: 1280px;
     preferred-height: 800px;
-    min-width: 800px;
-    min-height: 600px;
+    min-width: root.music-visible ? 1000px : 800px;
+    min-height: root.music-visible ? 720px : 600px;
     background: #101713;
     default-font-family: "sans-serif";
     default-font-size: 20px;
@@ -23,10 +25,60 @@ export component Shell inherits Window {
     callback launch();
     callback toggle-fullscreen();
     callback back();
+    in-out property <bool> music-visible: false;
+    in-out property <string> music-page: "setup";
+    in-out property <[MusicRow]> music-rows;
+    in-out property <int> music-selected: 0;
+    in-out property <int> music-menu: 0;
+    in-out property <int> music-focus: 1;
+    in-out property <bool> music-connected: false;
+    in-out property <bool> music-demo: false;
+    in-out property <bool> music-busy: false;
+    in-out property <bool> music-signing-in: false;
+    in-out property <string> music-client-id;
+    in-out property <string> music-title;
+    in-out property <string> music-detail;
+    in-out property <image> music-artwork;
+    in-out property <bool> music-has-art: false;
+    in-out property <string> music-track: "Nothing playing yet";
+    in-out property <string> music-artist;
+    in-out property <bool> music-playing: false;
+    in-out property <float> music-progress: 0;
+    in-out property <string> music-time: "0:00 / 0:00";
+    in-out property <string> music-device;
+    in-out property <string> music-status;
+    callback music-navigate(int, int);
+    callback music-activate();
+    callback music-back();
+    callback music-action(string);
+    callback music-choose(int);
+    callback focus-navigation();
+    focus-navigation => { keyboard.focus(); }
+    callback focus-music-input();
+    focus-music-input => { music.focus-client-id(); }
     forward-focus: keyboard;
 
     keyboard := FocusScope {
+        capture-key-pressed(event) => {
+            if (root.music-visible && event.modifiers.control && event.modifiers.meta
+                && (event.text == "x" || event.text == "X")) {
+                if (!event.repeat) { root.music-action("quit"); }
+                return accept;
+            }
+            return reject;
+        }
         key-pressed(event) => {
+            if (root.music-visible) {
+                if (event.text == Key.UpArrow) {root.music-navigate(0, -1); return accept;}
+                if (event.text == Key.DownArrow) {root.music-navigate(0, 1); return accept;}
+                if (event.text == Key.LeftArrow) {root.music-navigate(-1, 0); return accept;}
+                if (event.text == Key.RightArrow) {root.music-navigate(1, 0); return accept;}
+                if (event.text == Key.Return) {if (!event.repeat) {root.music-activate();} return accept;}
+                if (event.text == " ") {if (!event.repeat) {root.music-action("toggle");} return accept;}
+                if (event.text == "r" || event.text == "R") {if (!event.repeat) {root.music-action("refresh");} return accept;}
+                if (event.text == "n" || event.text == "N") {if (!event.repeat) {root.music-action("next");} return accept;}
+                if (event.text == "p" || event.text == "P") {if (!event.repeat) {root.music-action("previous");} return accept;}
+            }
             if (event.text == Key.UpArrow || event.text == Key.LeftArrow) {
                 root.navigate(-1);
                 return accept;
@@ -51,6 +103,7 @@ export component Shell inherits Window {
         }
 
         VerticalLayout {
+            visible: !root.music-visible;
             padding: 44px;
             spacing: 24px;
             HorizontalLayout {
@@ -108,6 +161,19 @@ export component Shell inherits Window {
                 font-size: 14px;
                 wrap: word-wrap;
             }
+        }
+        music := MusicView {
+            visible: root.music-visible;
+            page: root.music-page; rows: root.music-rows;
+            selected: root.music-selected; menu: root.music-menu; focus-pane: root.music-focus;
+            connected: root.music-connected; demo: root.music-demo; busy: root.music-busy; signing-in: root.music-signing-in;
+            client-id <=> root.music-client-id;
+            title: root.music-title; detail: root.music-detail;
+            artwork: root.music-artwork; has-art: root.music-has-art;
+            track: root.music-track; artist: root.music-artist; playing: root.music-playing;
+            progress: root.music-progress; time: root.music-time; device: root.music-device; status: root.music-status;
+            action(action) => {root.music-action(action);}
+            choose(index) => {keyboard.focus(); root.music-choose(index);}
         }
     }
 }

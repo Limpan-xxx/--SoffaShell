@@ -16,6 +16,7 @@ args = []
 
 [[apps]]
 name = "Spotify"
+interface = "spotify"
 category = "LISTEN"
 description = "Give the room a soundtrack."
 command = "spotify-launcher"

@@ -14,6 +14,8 @@ pub struct App {
     pub command: String,
     #[serde(default)]
     pub args: Vec<String>,
+    #[serde(default)]
+    pub interface: Option<String>,
 }
 
 impl Config {

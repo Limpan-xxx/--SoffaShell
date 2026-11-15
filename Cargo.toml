@@ -10,6 +10,12 @@ build = "build.rs"
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 toml = "0.9"
+serde_json = "1"
+url = "2"
+base64 = "0.23"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
+webbrowser = "1"
+zbus = "5.19"
 slint = { version = "~1.18.1", default-features = false, features = ["std", "backend-winit", "renderer-software", "compat-1-18"] }
 
 [build-dependencies]
