@@ -19,7 +19,7 @@ cargo run -- --windowed
 | Right (or Down) | Next app (wraps around) |
 | Enter | Launch selected app |
 | F11 | Toggle fullscreen |
-| Escape | Leave fullscreen; quit if already windowed |
+| Escape / Backspace | Leave fullscreen; quit if already windowed |
 | Alt+Tab | Switch between the launcher and desktop apps |
 
 Clicking a tile also launches it. Starts fullscreen by default; use `--windowed`
@@ -34,6 +34,20 @@ preferring scalable SVGs and then large PNGs (including 512×512) for TV display
 SoffaShell does not download or bundle copies of the launcher icons. If an icon
 is missing, the app name is shown. An app entry can optionally set `icon` to an
 installed icon name or an absolute path to an existing icon file.
+
+## Unified Remote keyboard input
+
+With your Unified Remote server running, send keyboard keys to the focused
+SoffaShell window: arrows navigate, Enter activates, Escape or Backspace goes
+back, and F11 toggles fullscreen. Held arrows keep moving; held activation,
+back, and fullscreen keys act only once per press.
+
+Navigation also works when a music button has focus. In the Spotify Client ID
+field, arrows and Backspace edit text as usual; Escape leaves the page and F11
+still toggles fullscreen. Modified keys are left for widget / desktop shortcuts.
+These handlers consume normal keyboard events; no separate remote protocol or
+network listener is required in SoffaShell. Once another app has focus, keyboard
+input goes to that app; use Alt+Tab to return.
 
 ## Spotify TV interface
 
@@ -95,7 +109,7 @@ complete search, recommendations, or album library.
 | Up / Down | Select a menu item, playlist, track, or playback control |
 | Left / Right | Switch between the sidebar and content |
 | Enter | Open / play / activate selected item |
-| Escape | Back to playlists, then launcher; cancels pending sign-in |
+| Escape / Backspace | Back to playlists, then launcher; cancels pending sign-in |
 | Ctrl+Windows+X | Quit local Spotify instances and Spotify Launcher, then return home |
 | Space | Play / pause |
 | N / P | Next / previous track |
@@ -201,7 +215,7 @@ handling, and headless rendering with actual Slint arrow-key events. Set
 screenshots outside the repo. These tests don't access a real Spotify account.
 
 This is a launcher skeleton. Keyboard events belong to the focused app. Controls
-inside Steam and Stremio, a global Home shortcut, remote input, automatic
+inside Steam and Stremio, a global Home shortcut, direct remote protocol support, automatic
 focus restoration, and boot-to-launcher integration are future work. A successful
 launch means the process started; apps may exit or hand off to an existing process.
 Nonzero exit statuses are logged to the terminal.

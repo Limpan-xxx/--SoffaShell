@@ -36,6 +36,7 @@ export component MusicView inherits Rectangle {
     in property <string> status;
     callback action(string);
     callback choose(int);
+    out property <bool> editing-client-id: client-input.has-focus;
     callback focus-client-id();
     focus-client-id => { client-input.focus(); }
 

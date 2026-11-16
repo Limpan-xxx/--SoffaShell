@@ -25,7 +25,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
             Some("--help" | "-h") => {
                 println!(
-                    "SoffaShell\n\nUsage: soffashell [--windowed | --fullscreen] [--config PATH] [--demo-spotify]\n\nStarts fullscreen by default. Use --windowed for development.\n\nArrows: select\nEnter: open / play\nEscape: back; leave fullscreen or quit from home\nF11: fullscreen\nMusic: Space plays/pauses, N/P skips, R refreshes\n--demo-spotify: preview the music interface with sample data (no account or audio)"
+                    "SoffaShell\n\nUsage: soffashell [--windowed | --fullscreen] [--config PATH] [--demo-spotify]\n\nStarts fullscreen by default. Use --windowed for development.\n\nArrows: select\nEnter: open / play\nEscape / Backspace: back; leave fullscreen or quit from home\nF11: fullscreen\nMusic: Space plays/pauses, N/P skips, R refreshes\n--demo-spotify: preview the music interface with sample data (no account or audio)"
                 );
                 return Ok(());
             }

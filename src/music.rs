@@ -1196,7 +1196,7 @@ mod tests {
         render(&window, "now-playing");
         press(&ui, Key::Return);
         assert!(!ui.get_music_playing());
-        press(&ui, Key::Escape);
+        press(&ui, Key::Backspace);
         assert_eq!(ui.get_music_page(), "library");
         assert_eq!(ui.get_music_selected(), 1);
         press(&ui, Key::LeftArrow);
@@ -1213,6 +1213,14 @@ mod tests {
             text: "rnp123".into(),
         });
         assert_eq!(ui.get_music_client_id(), "rnp123");
+        press(&ui, Key::Backspace);
+        assert_eq!(ui.get_music_client_id(), "rnp12");
+        assert_eq!(ui.get_music_page(), "setup");
+        let fullscreen_toggles = Rc::new(std::cell::Cell::new(0));
+        let toggles = fullscreen_toggles.clone();
+        ui.on_toggle_fullscreen(move || toggles.set(toggles.get() + 1));
+        press(&ui, Key::F11);
+        assert_eq!(fullscreen_toggles.get(), 1);
         // Returning from setup restores navigation focus, rather than quitting the shell.
         press(&ui, Key::Escape);
         assert!(ui.get_music_visible());
@@ -1256,7 +1264,7 @@ mod tests {
         });
         assert!(!ui.get_music_visible());
         assert!(!ui.get_music_playing());
-        assert_eq!(ui.get_music_client_id(), "rnp123");
+        assert_eq!(ui.get_music_client_id(), "rnp12");
         ui.hide().unwrap();
     }
 }
